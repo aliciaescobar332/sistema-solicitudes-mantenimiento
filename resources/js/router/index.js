@@ -8,18 +8,20 @@
  */
 
 import { createRouter, createWebHistory } from 'vue-router';
-import HelloWorld from '../components/HelloWorld.vue';
 import LoginView from '../views/auth/LoginView.vue';
 import DashboardView from '../views/dashboard/DashboardView.vue';
 import NuevaSolicitudView from '../views/solicitudes/NuevaSolicitudView.vue';
+import PanelCoordinacionView from '../views/coordinacion/PanelCoordinacionView.vue';
+import DetalleSolicitudView from '../views/coordinacion/DetalleSolicitudView.vue';
+import MisTareasView from '../views/tecnico/MisTareasView.vue';
+import DetalleTareaView from '../views/tecnico/DetalleTareaView.vue';
+import PanelAdminView from '../views/admin/PanelAdminView.vue';
 import authService from '../services/authService';
 
 const routes = [
   {
     path: '/',
-    name: 'home',
-    component: HelloWorld,
-    meta: { requiresAuth: false },
+    redirect: '/login',
   },
   {
     path: '/dashboard',
@@ -31,6 +33,36 @@ const routes = [
     path: '/solicitudes/nueva',
     name: 'nueva-solicitud',
     component: NuevaSolicitudView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/solicitudes/:id',
+    name: 'detalle-solicitud',
+    component: DetalleSolicitudView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/coordinacion',
+    name: 'coordinacion',
+    component: PanelCoordinacionView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/tareas',
+    name: 'mis-tareas',
+    component: MisTareasView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/tareas/:id',
+    name: 'detalle-tarea',
+    component: DetalleTareaView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/admin',
+    name: 'admin',
+    component: PanelAdminView,
     meta: { requiresAuth: true },
   },
   {
@@ -46,6 +78,13 @@ const router = createRouter({
   routes,
 });
 
+function rutaSegunRol(rol) {
+  if (rol === 'admin') return 'admin';
+  if (rol === 'coordinador') return 'coordinacion';
+  if (rol === 'tecnico') return 'mis-tareas';
+  return 'dashboard';
+}
+
 router.beforeEach((to) => {
   const isAuthenticated = authService.isAuthenticated();
 
@@ -54,7 +93,8 @@ router.beforeEach((to) => {
   }
 
   if (to.meta.requiresGuest && isAuthenticated) {
-    return { name: 'home' };
+    const user = authService.getUser();
+    return { name: rutaSegunRol(user?.rol) };
   }
 });
 

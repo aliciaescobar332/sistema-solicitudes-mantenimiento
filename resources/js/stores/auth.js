@@ -48,8 +48,6 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value;
   }
 
-  // Sincroniza el store cuando authService dispara logout forzado
-  // (por ejemplo, cuando el refresh token también expira)
   window.addEventListener('auth:logout', () => {
     user.value = null;
   });

@@ -137,12 +137,21 @@ async function handleSubmit() {
       localStorage.removeItem(REMEMBER_KEY);
     }
 
-    router.push('/');
+    // Redirigir según el rol del usuario
+    const rol = authStore.user?.rol;
+if (rol === 'admin') {
+  router.push('/admin');
+} else if (rol === 'coordinador') {
+  router.push('/coordinacion');
+} else if (rol === 'tecnico') {
+  router.push('/tareas');
+} else {
+  router.push('/dashboard');
+}
   } catch (e) {
     // El error ya queda reflejado en authStore.error
   }
 }
-
 async function handleForgotPassword() {
   forgotMessage.value = '';
   authStore.error = '';

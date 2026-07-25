@@ -33,7 +33,7 @@
           <p class="user-name">{{ authStore.user?.name ?? 'Usuario' }}</p>
           <p class="user-role">{{ authStore.user?.rol ?? 'Solicitante' }}</p>
         </div>
-        <div class="user-avatar">{{ userInitial }}</div>
+        <div class="user-avatar" title="Cerrar sesión" @click="cerrarSesion">{{ userInitial }}</div>
       </div>
     </header>
 
@@ -164,10 +164,12 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import solicitudesService from '../../services/solicitudesService';
 
 const authStore = useAuthStore();
+const router = useRouter();
 
 const resumen = ref({ pendientes: 0, en_proceso: 0, completadas: 0, total: 0 });
 const solicitudes = ref([]);
@@ -198,6 +200,11 @@ function estadoClase(estado) {
   return '';
 }
 
+async function cerrarSesion() {
+  await authStore.logout();
+  router.push('/login');
+}
+
 async function cargarDatos() {
   loading.value = true;
   error.value = '';
@@ -226,7 +233,6 @@ onMounted(cargarDatos);
   font-family: system-ui, -apple-system, sans-serif;
   color: #1e293b;
 }
-
 .dashboard-header {
   display: flex;
   align-items: center;
@@ -237,64 +243,30 @@ onMounted(cargarDatos);
   flex-wrap: wrap;
   gap: 1rem;
 }
-
-.header-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-.header-logo {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
-  background: #2563eb;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
+.header-brand { display: flex; align-items: center; gap: 0.75rem; }
+.header-logo { width: 38px; height: 38px; border-radius: 10px; background: #2563eb; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .header-logo svg { width: 20px; height: 20px; }
 .header-title { font-size: 1rem; font-weight: 700; margin: 0; line-height: 1.2; }
 .header-subtitle { font-size: 0.7rem; font-weight: 700; color: #2563eb; margin: 0; letter-spacing: 0.05em; }
-
 .header-nav { display: flex; gap: 1.5rem; }
 .nav-link { color: #64748b; text-decoration: none; font-size: 0.9rem; font-weight: 600; padding-bottom: 0.25rem; }
 .nav-link.active { color: #2563eb; border-bottom: 2px solid #2563eb; }
-
 .header-user { display: flex; align-items: center; gap: 0.75rem; }
 .bell-icon { color: #94a3b8; display: flex; }
 .bell-icon svg { width: 20px; height: 20px; }
 .user-info { text-align: right; }
 .user-name { font-size: 0.85rem; font-weight: 700; margin: 0; }
 .user-role { font-size: 0.75rem; color: #64748b; margin: 0; }
-.user-avatar {
-  width: 36px; height: 36px; border-radius: 50%;
-  background: #2563eb; color: #fff; display: flex;
-  align-items: center; justify-content: center; font-weight: 700;
-}
-
+.user-avatar { width: 36px; height: 36px; border-radius: 50%; background: #2563eb; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; cursor: pointer; }
+.user-avatar:hover { background: #1d4ed8; }
 .dashboard-main { max-width: 1100px; margin: 0 auto; padding: 2rem; }
-
-.welcome-row {
-  display: flex; justify-content: space-between; align-items: flex-start;
-  flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem;
-}
+.welcome-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
 .welcome-title { font-size: 1.8rem; font-weight: 800; margin: 0 0 0.4rem; }
 .welcome-subtitle { color: #64748b; margin: 0; }
-
-.new-request-btn {
-  display: flex; align-items: center; gap: 0.5rem;
-  background: #2563eb; color: #fff; border: none;
-  padding: 0.75rem 1.25rem; border-radius: 10px;
-  font-weight: 700; cursor: pointer; font-size: 0.95rem;
-}
+.new-request-btn { display: flex; align-items: center; gap: 0.5rem; background: #2563eb; color: #fff; border: none; padding: 0.75rem 1.25rem; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 0.95rem; text-decoration: none; }
 .new-request-btn:hover { background: #1d4ed8; }
 .plus-icon { font-size: 1.1rem; }
-
-.metrics-row {
-  display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem;
-  margin-bottom: 2rem;
-}
+.metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 2rem; }
 .metric-card { background: #fff; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
 .metric-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
 .metric-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
@@ -308,56 +280,33 @@ onMounted(cargarDatos);
 .badge-green { background: #dcfce7; color: #15803d; }
 .metric-label { font-size: 0.8rem; color: #64748b; font-weight: 700; letter-spacing: 0.04em; margin: 0 0 0.3rem; }
 .metric-value { font-size: 2rem; font-weight: 800; margin: 0; }
-
 .table-card { background: #fff; border-radius: 14px; padding: 1.5rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); margin-bottom: 2rem; }
 .table-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
 .table-header h3 { margin: 0; font-size: 1.1rem; }
 .view-all-link { color: #2563eb; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
-
 .table-loading, .table-error { padding: 1.5rem 0; color: #64748b; }
 .table-error { color: #dc2626; }
-
 .solicitudes-table { width: 100%; border-collapse: collapse; }
-.solicitudes-table th {
-  text-align: left; font-size: 0.75rem; color: #94a3b8; font-weight: 700;
-  letter-spacing: 0.04em; padding: 0.6rem 0.5rem; border-bottom: 1px solid #e5e9f0;
-}
+.solicitudes-table th { text-align: left; font-size: 0.75rem; color: #94a3b8; font-weight: 700; letter-spacing: 0.04em; padding: 0.6rem 0.5rem; border-bottom: 1px solid #e5e9f0; }
 .solicitudes-table td { padding: 0.9rem 0.5rem; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
 .cell-id { font-weight: 700; }
 .cell-titulo { font-weight: 600; margin: 0; }
 .cell-subtitulo { font-size: 0.8rem; color: #94a3b8; margin: 0.1rem 0 0; }
 .cell-ubicacion { font-style: italic; color: #475569; }
 .cell-empty { text-align: center; color: #94a3b8; padding: 2rem 0; }
-
 .status-badge { font-size: 0.78rem; font-weight: 700; padding: 0.3rem 0.7rem; border-radius: 20px; }
 .status-pendiente { background: #fef3c7; color: #b45309; }
 .status-proceso { background: #dbeafe; color: #1d4ed8; }
 .status-completada { background: #dcfce7; color: #15803d; }
-
 .details-link { color: #2563eb; font-weight: 600; font-size: 0.9rem; text-decoration: none; }
-
 .table-footer { margin-top: 1rem; font-size: 0.85rem; color: #94a3b8; }
-
-.help-banner {
-  background: linear-gradient(90deg, #2563eb, #1d4ed8);
-  border-radius: 14px; padding: 1.5rem 2rem;
-  display: flex; justify-content: space-between; align-items: center;
-  flex-wrap: wrap; gap: 1rem; color: #fff;
-}
+.help-banner { background: linear-gradient(90deg, #2563eb, #1d4ed8); border-radius: 14px; padding: 1.5rem 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; color: #fff; }
 .help-text { display: flex; align-items: flex-start; gap: 1rem; }
-.help-icon {
-  width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2);
-  display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0;
-}
+.help-icon { width: 32px; height: 32px; border-radius: 50%; background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
 .help-title { font-weight: 700; margin: 0 0 0.25rem; }
 .help-subtitle { font-size: 0.9rem; margin: 0; opacity: 0.9; }
-.contact-btn {
-  background: #fff; color: #2563eb; border: none; font-weight: 700;
-  padding: 0.7rem 1.3rem; border-radius: 10px; cursor: pointer;
-}
-
+.contact-btn { background: #fff; color: #2563eb; border: none; font-weight: 700; padding: 0.7rem 1.3rem; border-radius: 10px; cursor: pointer; }
 .dashboard-footer { text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 2rem 0; }
-
 @media (max-width: 768px) {
   .header-nav { display: none; }
   .metrics-row { grid-template-columns: 1fr; }
