@@ -127,6 +127,131 @@ class CoordinadorController extends Controller
         return response()->json(['mensaje' => 'Solicitud validada y cerrada correctamente.']);
     }
 
+    // Listar las solicitudes de reasignación pendientes
+    public function listarReasignacionesPendientes(Request $request)
+    {
+        $reasignaciones = \App\Models\SolicitudReasignacion::with([
+            'solicitud.unidad.sede',
+            'tecnicoSolicitante',
+            'tecnicoPropuesto'
+        ])->where('estado', 'Pendiente')
+          ->latest()
+          ->get();
+
+        return response()->json($reasignaciones);
+    }
+
+    // Obtener la carga de trabajo actual de los técnicos activos
+    public function obtenerCargaTrabajoTecnicos(Request $request)
+    {
+        $tecnicos = \App\Models\User::whereHas('rol', fn($q) => $q->where('nombre_rol', 'Técnico'))
+            ->where('estado', 'Activo')
+            ->withCount(['asignacionesTecnico as tickets_activos' => function ($q) {
+                $q->whereHas('solicitud', fn($sol) => $sol->whereIn('estado_solicitud', ['Asignada', 'En Proceso']));
+            }])
+            ->orderBy('tickets_activos', 'asc')
+            ->get()
+            ->map(fn($t) => [
+                'id_usuario'      => $t->id_usuario,
+                'nombre_completo' => $t->nombre . ' ' . $t->apellido,
+                'tickets_activos' => $t->tickets_activos,
+            ]);
+
+        return response()->json($tecnicos);
+    }
+
+    // Resolver (Aprobar o Rechazar) una solicitud de reasignación
+    public function resolverReasignacion(Request $request, string $idReasignacion)
+    {
+        $reasignacion = \App\Models\SolicitudReasignacion::where('estado', 'Pendiente')
+            ->findOrFail($idReasignacion);
+
+        $request->validate([
+            'decision' => 'required|in:Aprobada,Rechazada',
+            'id_usuario_tecnico_nuevo' => 'required_if:decision,Aprobada|exists:users,id_usuario',
+            'comentarios_coordinador' => 'nullable|string',
+        ]);
+
+        $solicitud = $reasignacion->solicitud;
+
+        if ($request->decision === 'Rechazada') {
+            $reasignacion->update([
+                'estado' => 'Rechazada',
+                'id_usuario_coordinador' => $request->user()->id_usuario,
+                'comentarios_coordinador' => $request->comentarios_coordinador,
+            ]);
+
+            return response()->json([
+                'mensaje' => 'La solicitud de reasignación ha sido rechazada de manera formal.',
+                'reasignacion' => $reasignacion,
+            ]);
+        }
+
+        // Si es aprobada:
+        $nuevoTecnico = \App\Models\User::with('rol')->findOrFail($request->id_usuario_tecnico_nuevo);
+        if (!$nuevoTecnico->tieneRol('Técnico')) {
+            return response()->json(['mensaje' => 'El nuevo usuario propuesto no posee el rol de Técnico.'], 422);
+        }
+
+        // Obtener asignación previa
+        $asignacion = Asignacion::where('id_solicitud', $solicitud->id_solicitud)->first();
+        $tecnicoAnteriorId = $asignacion ? $asignacion->id_usuario_tecnico : null;
+
+        // Actualizar o crear asignación
+        if ($asignacion) {
+            $asignacion->update([
+                'id_usuario_tecnico' => $request->id_usuario_tecnico_nuevo,
+                'id_usuario_coordinador' => $request->user()->id_usuario,
+                'fecha_asignacion' => now(),
+            ]);
+        } else {
+            Asignacion::create([
+                'id_solicitud' => $solicitud->id_solicitud,
+                'id_usuario_tecnico' => $request->id_usuario_tecnico_nuevo,
+                'id_usuario_coordinador' => $request->user()->id_usuario,
+                'fecha_asignacion' => now(),
+            ]);
+        }
+
+        // Obtener nombres para auditoría
+        $tecnicoAnteriorNombre = 'Ninguno';
+        if ($tecnicoAnteriorId) {
+            $tecnicoAnterior = \App\Models\User::find($tecnicoAnteriorId);
+            $tecnicoAnteriorNombre = $tecnicoAnterior ? $tecnicoAnterior->nombre . ' ' . $tecnicoAnterior->apellido : 'Técnico Anterior';
+        }
+        $nuevoTecnicoNombre = $nuevoTecnico->nombre . ' ' . $nuevoTecnico->apellido;
+
+        // Si la solicitud estaba en proceso, revertir a "Asignada"
+        $estadoAnterior = $solicitud->estado_solicitud;
+        if ($estadoAnterior === 'En Proceso') {
+            $solicitud->update([
+                'estado_solicitud' => 'Asignada',
+            ]);
+            $this->registrarHistorial($solicitud, $request->user()->id_usuario, 'estado_solicitud', 'En Proceso', 'Asignada');
+        }
+
+        // Registrar el cambio de técnico en el historial
+        $this->registrarHistorial(
+            $solicitud,
+            $request->user()->id_usuario,
+            'tecnico_asignado',
+            $tecnicoAnteriorNombre,
+            $nuevoTecnicoNombre
+        );
+
+        // Actualizar la solicitud de reasignación
+        $reasignacion->update([
+            'estado' => 'Aprobada',
+            'id_usuario_coordinador' => $request->user()->id_usuario,
+            'comentarios_coordinador' => $request->comentarios_coordinador,
+        ]);
+
+        return response()->json([
+            'mensaje' => 'La solicitud de reasignación ha sido aprobada y el ticket reasignado con éxito.',
+            'reasignacion' => $reasignacion->load('solicitud'),
+        ]);
+    }
+
     // Registro histórico de cambios
     private function registrarHistorial(Solicitud $solicitud, string $idUsuario, string $campo, ?string $anterior, ?string $nuevo): void
     {

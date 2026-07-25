@@ -24,11 +24,48 @@ class Solicitud extends Model
         'prioridad',
         'estado_solicitud',
         'fecha_apertura',
+        'codigo_verificacion',
+        'firma_integridad',
     ];
 
     protected $casts = [
         'fecha_apertura' => 'datetime',
+        'titulo' => 'encrypted',
+        'descripcion' => 'encrypted',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($solicitud) {
+            if (empty($solicitud->codigo_verificacion)) {
+                $solicitud->codigo_verificacion = strtoupper(bin2hex(random_bytes(3))); // 6 caracteres
+            }
+            $solicitud->firma_integridad = $solicitud->calcularFirma();
+        });
+
+        static::updating(function ($solicitud) {
+            $solicitud->firma_integridad = $solicitud->calcularFirma();
+        });
+    }
+
+    public function calcularFirma(): string
+    {
+        $datos = implode('|', [
+            $this->id_solicitud ?? '',
+            $this->id_usuario_solicitante ?? '',
+            $this->id_unidad ?? '',
+            $this->titulo ?? '',
+            $this->descripcion ?? '',
+            $this->estado_solicitud ?? 'Abierta'
+        ]);
+        $key = config('app.key') ?: 'base64:fallbackkeyforhmacverification1234567890=';
+        return hash_hmac('sha256', $datos, $key);
+    }
+
+    public function validarIntegridad(): bool
+    {
+        return hash_equals($this->firma_integridad ?? '', $this->calcularFirma());
+    }
 
     // Relación de pertenencia: define el usuario solicitante que da origen a este ticket de soporte.
     public function solicitante()
@@ -52,6 +89,12 @@ class Solicitud extends Model
     public function asignacion()
     {
         return $this->hasOne(Asignacion::class, 'id_solicitud', 'id_solicitud');
+    }
+
+    // Relación de uno a muchos: solicitudes de reasignación de técnico asociadas
+    public function reasignaciones()
+    {
+        return $this->hasMany(SolicitudReasignacion::class, 'id_solicitud', 'id_solicitud');
     }
 
     // Relación de uno a muchos: bitácora histórica de todas las transiciones de estado para auditoría obligatoria.

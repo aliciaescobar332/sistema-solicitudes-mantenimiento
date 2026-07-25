@@ -16,6 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // alias para el middleware de roles, así en las rutas queda más limpio
         $middleware->alias([
             'rol' => \App\Http\Middleware\VerificarRol::class,
+            'integridad' => \App\Http\Middleware\ValidarIntegridadTicket::class,
         ]);
 
         // Evitar redirección a login en llamadas API, retornando 401

@@ -73,10 +73,17 @@ class SolicitudesController extends Controller
             'historial.usuario',
         ])->findOrFail($id);
 
-        // Validar que el solicitante sea el dueño de la solicitud
+        // Validar que el solicitante sea el dueño de la solicitud, y que el técnico esté asignado
         $usuario = $request->user();
         if ($usuario->rol->nombre_rol === 'Solicitante' && $solicitud->id_usuario_solicitante !== $usuario->id_usuario) {
             return response()->json(['mensaje' => 'No cuenta con la autorización requerida para visualizar esta solicitud.'], 403);
+        }
+
+        if ($usuario->rol->nombre_rol === 'Técnico') {
+            $asignado = $solicitud->asignacion && $solicitud->asignacion->id_usuario_tecnico === $usuario->id_usuario;
+            if (!$asignado) {
+                return response()->json(['mensaje' => 'No cuenta con la autorización requerida para visualizar esta solicitud.'], 403);
+            }
         }
 
         return response()->json($solicitud);

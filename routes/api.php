@@ -55,9 +55,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('rol:Solicitante,Administrador')->prefix('solicitante')->group(function () {
         Route::get('/solicitudes', [SolicitudesController::class, 'index']);
         Route::post('/solicitudes', [SolicitudesController::class, 'store']);
-        Route::get('/solicitudes/{id}', [SolicitudesController::class, 'show']);
-        Route::put('/solicitudes/{id}', [SolicitudesController::class, 'update']);
-        Route::patch('/solicitudes/{id}/cancelar', [SolicitudesController::class, 'cancelar']);
+        Route::get('/solicitudes/{id}', [SolicitudesController::class, 'show'])->middleware('integridad');
+        Route::put('/solicitudes/{id}', [SolicitudesController::class, 'update'])->middleware('integridad');
+        Route::patch('/solicitudes/{id}/cancelar', [SolicitudesController::class, 'cancelar'])->middleware('integridad');
         Route::post('/solicitudes/{id}/evidencias', [SolicitudesController::class, 'adjuntarEvidencia']);
 
         // Encuesta de satisfacción y control de calidad al culminar la solicitud.
@@ -70,10 +70,15 @@ Route::middleware('auth:sanctum')->group(function () {
     // ------------------------------------------------------------------
     Route::middleware('rol:Coordinador,Administrador')->prefix('coordinador')->group(function () {
         Route::get('/solicitudes/pendientes', [CoordinadorController::class, 'solicitudesPendientes']);
-        Route::patch('/solicitudes/{id}/clasificar', [CoordinadorController::class, 'clasificar']);
-        Route::patch('/solicitudes/{id}/devolver', [CoordinadorController::class, 'devolver']);
-        Route::post('/solicitudes/{id}/asignar', [CoordinadorController::class, 'asignar']);
-        Route::patch('/solicitudes/{id}/validar-cierre', [CoordinadorController::class, 'validarCierre']);
+        Route::patch('/solicitudes/{id}/clasificar', [CoordinadorController::class, 'clasificar'])->middleware('integridad');
+        Route::patch('/solicitudes/{id}/devolver', [CoordinadorController::class, 'devolver'])->middleware('integridad');
+        Route::post('/solicitudes/{id}/asignar', [CoordinadorController::class, 'asignar'])->middleware('integridad');
+        Route::patch('/solicitudes/{id}/validar-cierre', [CoordinadorController::class, 'validarCierre'])->middleware('integridad');
+        
+        // Rutas del flujo de reasignación
+        Route::get('/reasignaciones/pendientes', [CoordinadorController::class, 'listarReasignacionesPendientes']);
+        Route::get('/tecnicos/carga-trabajo', [CoordinadorController::class, 'obtenerCargaTrabajoTecnicos']);
+        Route::patch('/reasignaciones/{id}/resolver', [CoordinadorController::class, 'resolverReasignacion']);
     });
 
 
@@ -82,10 +87,13 @@ Route::middleware('auth:sanctum')->group(function () {
     // ------------------------------------------------------------------
     Route::middleware('rol:Técnico,Administrador')->prefix('tecnico')->group(function () {
         Route::get('/asignaciones', [TecnicoController::class, 'misAsignaciones']);
-        Route::patch('/asignaciones/{id}/iniciar', [TecnicoController::class, 'iniciarAtencion']);
-        Route::post('/asignaciones/{id}/bitacoras', [TecnicoController::class, 'registrarBitacora']);
-        Route::get('/asignaciones/{id}/bitacoras', [TecnicoController::class, 'verBitacoras']);
-        Route::patch('/asignaciones/{id}/solicitar-cierre', [TecnicoController::class, 'solicitarCierre']);
+        Route::patch('/asignaciones/{id}/iniciar', [TecnicoController::class, 'iniciarAtencion'])->middleware('integridad');
+        Route::post('/asignaciones/{id}/bitacoras', [TecnicoController::class, 'registrarBitacora'])->middleware('integridad');
+        Route::get('/asignaciones/{id}/bitacoras', [TecnicoController::class, 'verBitacoras'])->middleware('integridad');
+        Route::patch('/asignaciones/{id}/solicitar-cierre', [TecnicoController::class, 'solicitarCierre'])->middleware('integridad');
+        
+        // Solicitar reasignación
+        Route::post('/asignaciones/{id}/solicitar-reasignacion', [TecnicoController::class, 'solicitarReasignacion'])->middleware('integridad');
     });
 
 
@@ -100,5 +108,5 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Consulta detallada del ticket (accesible para el coordinador o el técnico asignado).
     Route::middleware('rol:Coordinador,Técnico,Administrador')
-        ->get('/solicitudes/{id}', [SolicitudesController::class, 'show']);
+        ->get('/solicitudes/{id}', [SolicitudesController::class, 'show'])->middleware('integridad');
 });
