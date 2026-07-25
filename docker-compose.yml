@@ -1,0 +1,79 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hospital_app
+    restart: unless-stopped
+    working_dir: /var/www/html
+    volumes:
+      - ./:/var/www/html
+    environment:
+      - DB_CONNECTION=mysql
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_DATABASE=hospital
+      - DB_USERNAME=hospital_user
+      - DB_PASSWORD=hospital_pass
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - hospital_network
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: hospital_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - app
+    networks:
+      - hospital_network
+
+  mysql:
+    image: mysql:8.0
+    container_name: hospital_mysql
+    restart: unless-stopped
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_pass
+      - MYSQL_DATABASE=hospital
+      - MYSQL_USER=hospital_user
+      - MYSQL_PASSWORD=hospital_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - hospital_mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot_pass"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - hospital_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: hospital_phpmyadmin
+    restart: unless-stopped
+    environment:
+      - PMA_HOST=mysql
+      - PMA_USER=root
+      - PMA_PASSWORD=root_pass
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - hospital_network
+
+networks:
+  hospital_network:
+    driver: bridge
+
+volumes:
+  hospital_mysql_data:
