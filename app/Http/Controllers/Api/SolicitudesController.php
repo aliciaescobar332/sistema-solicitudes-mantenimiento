@@ -30,7 +30,8 @@ class SolicitudesController extends Controller
             $query->whereDate('fecha_apertura', '<=', $request->hasta);
         }
 
-        return response()->json($query->latest()->get());
+        $perPage = $request->integer('per_page', 15);
+        return response()->json($query->latest()->paginate($perPage));
     }
 
     // Registro de una nueva solicitud a través del formulario provisto por el usuario.

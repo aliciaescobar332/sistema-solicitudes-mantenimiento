@@ -12,14 +12,16 @@ use Illuminate\Support\Facades\Hash;
 class UsuariosController extends Controller
 {
     // Listar todos los usuarios con sus roles correspondientes
-    public function index()
+    public function index(Request $request)
     {
-        $usuarios = User::with('rol')
+        $perPage = $request->integer('per_page', 15);
+        $paginator = User::with('rol')
             ->orderBy('nombre')
-            ->get()
-            ->map(fn($u) => $this->formatear($u));
+            ->paginate($perPage);
 
-        return response()->json($usuarios);
+        $paginator->through(fn($u) => $this->formatear($u));
+
+        return response()->json($paginator);
     }
 
     // Registro formal de un nuevo usuario en la base de datos, asignándole sus credenciales iniciales.

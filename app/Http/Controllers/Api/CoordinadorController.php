@@ -25,7 +25,8 @@ class CoordinadorController extends Controller
             $query->where('id_unidad', $request->id_unidad);
         }
 
-        return response()->json($query->oldest()->get());
+        $perPage = $request->integer('per_page', 15);
+        return response()->json($query->oldest()->paginate($perPage));
     }
 
     // Clasificar y asignar prioridad a la solicitud
@@ -130,13 +131,14 @@ class CoordinadorController extends Controller
     // Listar las solicitudes de reasignación pendientes
     public function listarReasignacionesPendientes(Request $request)
     {
+        $perPage = $request->integer('per_page', 15);
         $reasignaciones = \App\Models\SolicitudReasignacion::with([
             'solicitud.unidad.sede',
             'tecnicoSolicitante',
             'tecnicoPropuesto'
         ])->where('estado', 'Pendiente')
           ->latest()
-          ->get();
+          ->paginate($perPage);
 
         return response()->json($reasignaciones);
     }

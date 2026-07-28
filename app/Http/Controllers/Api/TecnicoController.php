@@ -14,10 +14,11 @@ class TecnicoController extends Controller
     // Consultar las asignaciones asignadas al técnico autenticado
     public function misAsignaciones(Request $request)
     {
+        $perPage = $request->integer('per_page', 15);
         $asignaciones = Asignacion::with(['solicitud.unidad.sede', 'solicitud.evidencias', 'bitacoras'])
             ->where('id_usuario_tecnico', $request->user()->id_usuario)
             ->latest()
-            ->get();
+            ->paginate($perPage);
 
         return response()->json($asignaciones);
     }

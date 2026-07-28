@@ -45,6 +45,20 @@ class Solicitud extends Model
 
         static::updating(function ($solicitud) {
             $solicitud->firma_integridad = $solicitud->calcularFirma();
+
+            // Si el estado cambia a 'Cancelada', eliminar las evidencias asociadas
+            if ($solicitud->isDirty('estado_solicitud') && $solicitud->estado_solicitud === 'Cancelada') {
+                $solicitud->evidencias->each(function ($evidencia) {
+                    $evidencia->delete();
+                });
+            }
+        });
+
+        static::deleting(function ($solicitud) {
+            // Eliminar evidencias al borrar físicamente la solicitud
+            $solicitud->evidencias->each(function ($evidencia) {
+                $evidencia->delete();
+            });
         });
     }
 

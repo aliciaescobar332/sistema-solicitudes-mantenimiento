@@ -16,6 +16,8 @@ use App\Http\Controllers\Api\CatalogosController;
 // Rutas públicas: Accesibles de forma general sin necesidad de token.
 // ------------------------------------------------------------------
 Route::post('/login', [AuthController::class, 'login']);
+Route::post('/forgot-password', [AuthController::class, 'enviarEnlaceRecuperacion']);
+Route::post('/reset-password', [AuthController::class, 'restablecerPassword']);
 
 // Catálogos públicos que permiten cargar de forma dinámica sedes y unidades en el formulario.
 Route::get('/catalogos/sedes', [CatalogosController::class, 'sedes']);

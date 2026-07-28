@@ -84,4 +84,15 @@ class User extends Authenticatable
     {
         return $this->rol && $this->rol->nombre_rol === $nombreRol;
     }
+
+    /**
+     * Enviar la notificación de restablecimiento de contraseña.
+     *
+     * @param  string  $token
+     * @return void
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new \App\Notifications\RestablecerPasswordNotification($token));
+    }
 }

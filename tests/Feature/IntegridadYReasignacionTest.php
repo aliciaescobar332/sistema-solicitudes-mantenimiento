@@ -274,7 +274,7 @@ class IntegridadYReasignacionTest extends TestCase
         $response = $this->actingAs($this->coordinadorUser)
             ->getJson("/api/coordinador/reasignaciones/pendientes");
         $response->assertStatus(200);
-        $response->assertJsonCount(1);
+        $response->assertJsonCount(1, 'data');
 
         $response = $this->actingAs($this->coordinadorUser)
             ->getJson("/api/coordinador/tecnicos/carga-trabajo");
