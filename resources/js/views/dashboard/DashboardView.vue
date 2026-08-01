@@ -118,11 +118,11 @@
           <tbody>
             <tr v-for="solicitud in solicitudes" :key="solicitud.id">
               <td class="cell-id">#SOL-{{ solicitud.id }}</td>
-              <td>
-                <p class="cell-titulo">{{ solicitud.titulo }}</p>
-                <p class="cell-subtitulo">{{ solicitud.subtitulo }}</p>
-              </td>
-              <td class="cell-ubicacion">{{ solicitud.ubicacion }}</td>
+             <td>
+    <p class="cell-titulo">{{ solicitud.titulo }}</p>
+    <p class="cell-subtitulo">{{ solicitud.subtitulo }}</p>
+    <p v-if="solicitud.descripcion" class="cell-descripcion">{{ solicitud.descripcion }}</p>
+</td>              <td class="cell-ubicacion">{{ solicitud.ubicacion }}</td>
               <td>{{ formatFecha(solicitud.fecha) }}</td>
               <td>
                 <span class="status-badge" :class="estadoClase(solicitud.estado)">

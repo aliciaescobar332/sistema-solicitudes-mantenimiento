@@ -16,6 +16,7 @@ import DetalleSolicitudView from '../views/coordinacion/DetalleSolicitudView.vue
 import MisTareasView from '../views/tecnico/MisTareasView.vue';
 import DetalleTareaView from '../views/tecnico/DetalleTareaView.vue';
 import PanelAdminView from '../views/admin/PanelAdminView.vue';
+import ReportesView from '../views/reportes/ReportesView.vue';
 import authService from '../services/authService';
 
 const routes = [
@@ -63,6 +64,12 @@ const routes = [
     path: '/admin',
     name: 'admin',
     component: PanelAdminView,
+    meta: { requiresAuth: true },
+  },
+  {
+    path: '/reportes',
+    name: 'reportes',
+    component: ReportesView,
     meta: { requiresAuth: true },
   },
   {

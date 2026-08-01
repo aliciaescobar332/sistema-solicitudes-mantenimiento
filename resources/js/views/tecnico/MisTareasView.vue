@@ -58,9 +58,9 @@
           </div>
 
           <h3 class="card-title">{{ t.titulo }}</h3>
-          <p class="card-meta">{{ t.ubicacion }} <span v-if="t.departamento">· {{ t.departamento }}</span></p>
-          <p class="card-date">{{ formatFecha(t.fecha) }}</p>
-
+<p class="card-meta">{{ t.ubicacion }} <span v-if="t.departamento"> · {{ t.departamento }}</span></p>
+<p v-if="t.descripcion" class="card-descripcion">{{ t.descripcion }}</p>
+<p class="card-date">{{ formatFecha(t.fecha) }}</p>
           <div class="card-bottom">
             <span class="status-badge" :class="estadoClase(t.estado)">{{ t.estado }}</span>
             <div class="card-actions">
@@ -235,7 +235,7 @@ onMounted(() => {
 .card-title { font-size: 1rem; font-weight: 700; margin: 0; }
 .card-meta { font-size: 0.85rem; color: #475569; margin: 0; }
 .card-date { font-size: 0.78rem; color: #94a3b8; margin: 0; }
-
+.card-descripcion { font-size: 0.82rem; color: #64748b; margin: 0.35rem 0; line-height: 1.35; }
 .card-bottom { display: flex; justify-content: space-between; align-items: center; margin-top: 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
 .card-actions { display: flex; align-items: center; gap: 0.6rem; }
 .detail-link { font-size: 0.8rem; font-weight: 600; color: #2563eb; text-decoration: none; }
